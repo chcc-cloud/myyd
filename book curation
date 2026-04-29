@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curator's Archive: 3-Section Dashboard</title>
+    <style>
+        :root {
+            --bg-pastel: #fdfaf6;
+            --economic-bg: #e3f2fd;
+            --data-bg: #e8f5e9;
+            --finance-bg: #fff9db;
+            --text-dark: #454d55;
+            --border-radius: 24px;
+            /* 더 부드러운 곡선 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-pastel);
+            font-family: 'Noto Serif KR', serif;
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+            /* 전체 페이지 스크롤 대신 섹션 스크롤 */
+        }
+
+        /* 전체 레이아웃 구성을 3컬럼으로 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* 각 섹션(컬럼) 스타일 */
+        .section {
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 섹션별 배경색 */
+        .section.economic {
+            background-color: var(--economic-bg);
+        }
+
+        .section.data {
+            background-color: var(--data-bg);
+        }
+
+        .section.finance {
+            background-color: var(--finance-bg);
+        }
+
+        .section-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1.5px dashed rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header h2 {
+            font-size: 1.4rem;
+            letter-spacing: -0.5px;
+        }
+
+        .section-header p {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        /* 스크롤 가능한 카드 리스트 영역 */
+        .book-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        /* 스크롤바 커스텀 */
+        .book-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .book-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        /* 북 카드: 직사각형 탈피를 위한 조약돌 모양 스타일 */
+        .book-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .book-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 5px;
+        }
+
+        .book-author {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .book-insight {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #666;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        /* 상단 컨트롤바 */
+        .top-bar {
+            grid-column: span 3;
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .db-status {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            background: #eee;
+            border-radius: 30px;
+            color: #777;
+        }
+
+        .sync-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* 반응형 모바일 대응 */
+        @media (max-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+                height: auto;
+            }
+
+            body {
+                overflow: auto;
+            }
+
+            .section {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard">
+        <div class="top-bar">
+            <h1>My Intellectual Library</h1>
+            <div>
+                <span class="db-status" id="db-status">Mode: Local Mock Data</span>
+                <button class="sync-btn" onclick="fetchBooks()">🔄 Refresh (Sync)</button>
+            </div>
+        </div>
+
+        <section class="section economic">
+            <div class="section-header">
+                <h2>Economic Theory</h2>
+                <p>미시/거시 경제 및 소비자 이론</p>
+            </div>
+            <div class="book-container" id="container-economic">
+            </div>
+        </section>
+
+        <section class="section data">
+            <div class="section-header">
+                <h2>Data & Statistics</h2>
+                <p>R, Python, 통계학 및 빅데이터 분석</p>
+            </div>
+            <div class="book-container" id="container-data">
+            </div>
+        </section>
+
+        <section class="section finance">
+            <div class="section-header">
+                <h2>Finance & Tax</h2>
+                <p>회계학, 세무법 및 재무 관리</p>
+            </div>
+            <div class="book-container" id="container-finance">
+            </div>
+        </section>
+    </div>
+
+    <script>
+        /**
+         * [DB 연결 통로 - Bridge 설명]
+         * 실제 DB를 연결하고 싶다면 아래 mockData 부분을 주석 처리하고
+         * fetch('여기에_API_주소_입력') 로직을 활성화하면 됩니다.
+         */
+
+        // 1. 가짜 데이터 (나중에 DB 서버에서 내려줄 데이터 형식)
+        const mockData = [
+            { id: 1, category: 'economic', title: '미시경제학론', author: '이준구', insight: '효용 극대화의 원리를 실생활 사례로 풀어낸 명저.' },
+            { id: 2, category: 'data', title: 'R을 활용한 데이터 과학', author: 'Hadley Wickham', insight: 'Tidyverse 생태계를 이해하는 가장 완벽한 입문서.' },
+            { id: 3, category: 'finance', title: 'IFRS 회계원리', author: '최창규', insight: '복식부기의 원리가 논리적으로 정립되는 느낌.' },
+            { id: 4, category: 'economic', title: '경제학 원론', author: 'Mankiw', insight: '경제학의 10대 기본 원칙만 알아도 세상이 달라 보인다.' },
+            { id: 5, category: 'data', title: '파이썬 머신러닝 완벽 가이드', author: '권철민', insight: '사이킷런 프레임워크의 구조를 한눈에 파악하기 좋음.' },
+            { id: 6, category: 'finance', title: '세법개론', author: '임상엽', insight: '법인세법의 복잡한 구조를 계통도로 이해하게 해줌.' }
+        ];
+
+        // 2. 데이터를 가져오는 함수 (이것이 DB와의 통로입니다)
+        async function fetchBooks() {
+            document.getElementById('db-status').innerText = 'Syncing with DB...';
+
+            try {
+                // [나중에 실제 DB 연결 시 코드 예시]
+                // const response = await fetch('https://api.yourdomain.com/books');
+                // const data = await response.json();
+
+                // 현재는 1초 뒤에 mockData를 반환하는 식으로 시뮬레이션합니다.
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                renderDashboard(mockData);
+                document.getElementById('db-status').innerText = 'Mode: Sync Completed (Cloud)';
+            } catch (error) {
+                console.error("Data Fetch Error:", error);
+                document.getElementById('db-status').innerText = 'Status: Connection Failed';
+            }
+        }
+
+        // 3. 화면에 렌더링하는 함수
+        function renderDashboard(data) {
+            // 컨테이너 초기화
+            const containers = {
+                economic: document.getElementById('container-economic'),
+                data: document.getElementById('container-data'),
+                finance: document.getElementById('container-finance')
+            };
+
+            Object.values(containers).forEach(c => c.innerHTML = '');
+
+            // 데이터 배치
+            data.forEach(book => {
+                const container = containers[book.category];
+                if (container) {
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    card.innerHTML = `
+                    <span class="book-title">${book.title}</span>
+                    <span class="book-author">${book.author}</span>
+                    <p class="book-insight">${book.insight}</p>
+                `;
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        // 초기 로딩
+        window.onload = fetchBooks;
+    </script>
+
+</body>
+
+</html>
