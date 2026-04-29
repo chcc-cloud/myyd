@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Priority To-Do & Timeline</title>
+    <style>
+        /* * 디자인 컨셉: Minimalist Productivity 
+         * 색상 시스템: 아이젠하워 매트릭스 기반의 직관적 컬러 코드
+         */
+        :root {
+            --p1-color: #ff4d4d;
+            /* 긴급 + 중요 */
+            --p2-color: #ff9f43;
+            /* 비긴급 + 중요 */
+            --p3-color: #54a0ff;
+            /* 긴급 + 비중요 */
+            --p4-color: #a29bfe;
+            /* 비긴급 + 비중요 */
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* 입력 영역 */
+        .input-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        input,
+        select {
+            padding: 12px;
+            border: 1px solid #dfe6e9;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #0984e3;
+        }
+
+        input[type="text"] {
+            flex: 2;
+        }
+
+        input[type="number"] {
+            flex: 1;
+        }
+
+        button#add-btn {
+            background: #2d3436;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        button#add-btn:active {
+            transform: scale(0.98);
+        }
+
+        button#add-btn:hover {
+            background: #000;
+        }
+
+        /* 결과 리스트 및 타임라인 */
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            border-left: 6px solid #ccc;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .task-time {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-sub);
+        }
+
+        .task-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .task-meta {
+            font-size: 0.75rem;
+            color: #b2bec3;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #fab1a0;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+        }
+
+        /* 우선순위별 테두리 색상 */
+        .p1 {
+            border-left-color: var(--p1-color);
+        }
+
+        .p2 {
+            border-left-color: var(--p2-color);
+        }
+
+        .p3 {
+            border-left-color: var(--p3-color);
+        }
+
+        .p4 {
+            border-left-color: var(--p4-color);
+        }
+
+        /* 반응형 */
+        @media (max-width: 480px) {
+            .input-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Smart Priority Planner</h1>
+        </header>
+
+        <div class="input-card">
+            <div class="input-group">
+                <input type="text" id="task-name" placeholder="무엇을 해야 하나요?" maxlength="30">
+                <div class="input-row">
+                    <select id="task-priority">
+                        <option value="1">1순위: 긴급 + 중요</option>
+                        <option value="2">2순위: 중요 + 비긴급</option>
+                        <option value="3">3순위: 긴급 + 비중요</option>
+                        <option value="4">4순위: 비긴급 + 비중요</option>
+                    </select>
+                    <input type="number" id="task-duration" placeholder="소요시간(분)" min="5" step="5">
+                </div>
+                <button id="add-btn">오늘 일정에 추가</button>
+            </div>
+        </div>
+
+        <div class="section-title">📅 자동 생성된 타임라인 (09:00 시작 기준)</div>
+        <div id="task-list" class="task-list">
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 비즈니스 로직 설명:
+         * 1. 데이터 저장: localStorage에 JSON 형태로 저장
+         * 2. 정렬 로직: Priority(오름차순) -> Duration(오름차순)
+         * 3. 타임라인: 정렬된 순서대로 이전 작업의 종료 시간을 다음 작업의 시작 시간으로 계산
+         */
+
+        const taskNameInput = document.getElementById('task-name');
+        const taskPriorityInput = document.getElementById('task-priority');
+        const taskDurationInput = document.getElementById('task-duration');
+        const addBtn = document.getElementById('add-btn');
+        const taskListContainer = document.getElementById('task-list');
+
+        let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
+
+        // 초기 렌더링
+        renderTasks();
+
+        // 할 일 추가 이벤트
+        addBtn.addEventListener('click', () => {
+            const name = taskNameInput.value.trim();
+            const priority = parseInt(taskPriorityInput.value);
+            const duration = parseInt(taskDurationInput.value);
+
+            if (!name || isNaN(duration)) {
+                alert('할 일과 소요 시간을 정확히 입력해주세요.');
+                return;
+            }
+
+            const newTask = {
+                id: Date.now(),
+                name,
+                priority,
+                duration
+            };
+
+            tasks.push(newTask);
+            saveAndRender();
+
+            // 입력창 초기화
+            taskNameInput.value = '';
+            taskDurationInput.value = '';
+            taskNameInput.focus();
+        });
+
+        // 데이터 저장 및 렌더링 호출
+        function saveAndRender() {
+            localStorage.setItem('myTasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        // 작업 삭제
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveAndRender();
+        }
+
+        // 시간 포맷팅 (HH:mm)
+        function formatTime(minutes) {
+            const h = Math.floor(minutes / 60) % 24;
+            const m = minutes % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        // 메인 렌더링 함수
+        function renderTasks() {
+            taskListContainer.innerHTML = '';
+
+            // 1. 자동 우선순위 정렬 (Priority -> Duration)
+            tasks.sort((a, b) => {
+                if (a.priority !== b.priority) return a.priority - b.priority;
+                return a.duration - b.duration;
+            });
+
+            // 2. 타임라인 계산 (기본 시작 시간 09:00 = 540분)
+            let currentTotalMinutes = 540;
+
+            tasks.forEach(task => {
+                const startTime = formatTime(currentTotalMinutes);
+                const endTime = formatTime(currentTotalMinutes + task.duration);
+
+                const card = document.createElement('div');
+                card.className = `task-card p${task.priority}`;
+
+                card.innerHTML = `
+                <div class="task-info">
+                    <span class="task-time">${startTime} ~ ${endTime}</span>
+                    <span class="task-title">${task.name}</span>
+                    <span class="task-meta">${task.priority}순위 | ${task.duration}분 소요</span>
+                </div>
+                <button class="delete-btn" onclick="deleteTask(${task.id})">✕</button>
+            `;
+
+                taskListContainer.appendChild(card);
+
+                // 다음 작업을 위해 현재 작업 시간을 누적
+                currentTotalMinutes += task.duration;
+            });
+
+            if (tasks.length === 0) {
+                taskListContainer.innerHTML = '<div style="text-align:center; color:#b2bec3; margin-top:20px;">할 일을 추가하고 완벽한 하루를 설계하세요!</div>';
+            }
+        }
+    </script>
+
+</body>
+
+</html>
