@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grand Pastel Bookshelf</title>
+    <style>
+        /* 가상 서재를 위한 깊이감 있는 스타일 정의 */
+        :root {
+            --shelf-wood: #f3e5ab;
+            /* 따뜻한 느낌의 나무색 파스텔 */
+            --shelf-shadow: rgba(0, 0, 0, 0.08);
+            --kyobo-green: #006633;
+            --bg-wall: #f9f7f2;
+            /* 서재 벽지 색상 */
+
+            /* 9개 섹션별 파스텔 포인트 컬러 */
+            --c1: #ffadad;
+            --c2: #ffd6a5;
+            --c3: #fdffb6;
+            --c4: #caffbf;
+            --c5: #9bf6ff;
+            --c6: #a0c4ff;
+            --c7: #bdb2ff;
+            --c8: #ffc6ff;
+            --c9: #e2e2e2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-wall);
+            font-family: 'Noto Serif KR', serif;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 50px 20px;
+            background: linear-gradient(to bottom, #ffffff, var(--bg-wall));
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            color: var(--kyobo-green);
+            letter-spacing: -1px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* 전체 책장 그리드 (3x3) */
+        .library-wall {
+            max-width: 1200px;
+            margin: 0 auto 100px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px 20px;
+            /* 세로 간격을 넓혀 층간 구분 */
+            padding: 20px;
+        }
+
+        /* 각 책장 칸 (Compartment) */
+        .shelf-box {
+            position: relative;
+            background: white;
+            border-radius: 4px;
+            height: 450px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 10px 20px var(--shelf-shadow), 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-bottom: 12px solid var(--shelf-wood);
+            /* 선반 바닥 두께 */
+        }
+
+        /* 선반 바닥 그림자 및 장식 */
+        .shelf-box::after {
+            content: '';
+            position: absolute;
+            bottom: -22px;
+            left: -5%;
+            width: 110%;
+            height: 12px;
+            background: #e6d5a7;
+            border-radius: 2px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .shelf-title {
+            padding: 15px;
+            font-weight: 800;
+            font-size: 1rem;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1;
+        }
+
+        /* 책들이 담기는 스크롤 영역 */
+        .book-scroller {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            perspective: 1000px;
+        }
+
+        /* 책 카드 디자인 (오브젝트 느낌) */
+        .book-object {
+            background: white;
+            border-radius: 3px 8px 8px 3px;
+            padding: 15px;
+            border-left: 8px solid var(--point-color);
+            /* 책 등(Spine) 느낌 */
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .book-object:hover {
+            transform: rotateY(-5deg) translateX(5px);
+            box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .book-object .tag {
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: var(--point-color);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .book-object .title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 3px;
+            display: block;
+            line-height: 1.3;
+        }
+
+        .book-object .author {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .book-object .insight-preview {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+            border-top: 1px solid #f5f5f5;
+            padding-top: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* 스크롤바 디자인 */
+        .book-scroller::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .book-scroller::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 10px;
+        }
+
+        /* 하단 상태바 */
+        .footer-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--kyobo-green);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        /* 반응형 */
+        @media (max-width: 1024px) {
+            .library-wall {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .library-wall {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>The Personal Library</h1>
+        <p>당신에게 꼭 맞는 책을 추천해드립니다.</p>
+    </header>
+
+    <main class="library-wall">
+        <!-- 9개의 책장 칸 -->
+        <div class="shelf-box" style="--point-color: var(--c1);">
+            <div class="shelf-title">소설 / 시 / 희곡</div>
+            <div class="book-scroller" id="shelf-1"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c2);">
+            <div class="shelf-title">인문 / 역사 / 철학</div>
+            <div class="book-scroller" id="shelf-2"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c3);">
+            <div class="shelf-title">경제경영</div>
+            <div class="book-scroller" id="shelf-3"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c4);">
+            <div class="shelf-title">자기계발</div>
+            <div class="book-scroller" id="shelf-4"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c5);">
+            <div class="shelf-title">과학 / 공학</div>
+            <div class="book-scroller" id="shelf-5"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c6);">
+            <div class="shelf-title">IT / 프로그래밍</div>
+            <div class="book-scroller" id="shelf-6"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c7);">
+            <div class="shelf-title">예술 / 문화</div>
+            <div class="book-scroller" id="shelf-7"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c8);">
+            <div class="shelf-title">심리 / 종교</div>
+            <div class="book-scroller" id="shelf-8"></div>
+        </div>
+        <div class="shelf-box" style="--point-color: var(--c9);">
+            <div class="shelf-title">기타 / 대학교재</div>
+            <div class="book-scroller" id="shelf-9"></div>
+        </div>
+    </main>
+
+    <div class="footer-status" id="db-status">Cloud Sync: Ready</div>
+
+    <script>
+        /**
+         * DB 연동 Bridge: 
+         * 나중에 서버에서 데이터를 가져올 때 이 구조의 JSON을 fetch하면 됩니다.
+         */
+        const myLibraryData = [
+            { id: 1, shelfId: 1, category: '소설', title: '소년이 온다', author: '한강', insight: '비극 속에서도 빛나는 인간의 존엄성에 대하여.' },
+            { id: 2, shelfId: 2, category: '역사', title: '총 균 쇠', author: '재레드 다이아몬드', insight: '환경이 인류의 운명을 어떻게 결정지었는가.' },
+            { id: 3, shelfId: 3, category: '경영', title: '제로 투 원', author: '피터 틸', insight: '경쟁하지 말고 독점하라. 새로운 것을 만드는 법.' },
+            { id: 4, shelfId: 4, category: '성장', title: '아주 작은 습관의 힘', author: '제임스 클리어', insight: '1%의 개선이 만드는 거대한 변화.' },
+            { id: 5, shelfId: 5, category: '물리', title: '부분과 전체', author: '베르너 하이젠베르크', insight: '과학적 발견 뒤에 숨겨진 철학적 고찰.' },
+            { id: 6, shelfId: 6, category: '개발', title: '구글 엔지니어는 이렇게 일한다', author: '타이터스 윈터스', insight: '지속 가능한 소프트웨어 엔지니어링의 정수.' },
+            { id: 7, shelfId: 7, category: '예술', title: '서양미술사', author: '에른스트 곰브리치', insight: '미술은 시대의 정신을 담는 그릇이다.' },
+            { id: 8, shelfId: 8, category: '심리', title: '죽음의 수용소에서', author: '빅터 프랭클', insight: '삶의 의미를 찾는 자는 어떤 고난도 견딜 수 있다.' },
+            { id: 9, shelfId: 9, category: '교재', title: '거시경제학', author: '그레고리 맨큐', insight: '현대 경제 시스템의 거대한 흐름을 이해하기.' },
+            { id: 10, shelfId: 6, category: '코딩', title: '리팩터링 2판', author: '마틴 파울러', insight: '겉모습은 그대로, 속은 더 단단하게.' }
+        ];
+
+        async function syncWithDatabase() {
+            const status = document.getElementById('db-status');
+            status.innerText = 'Syncing with Server...';
+
+            try {
+                // [실제 구현 시] 
+                // const response = await fetch('/api/my-library');
+                // const data = await response.json();
+
+                await new Promise(r => setTimeout(r, 1000)); // 로딩 시뮬레이션
+                renderLibrary(myLibraryData);
+
+                status.innerText = '● Database Connected';
+                status.style.background = '#006633';
+            } catch (e) {
+                status.innerText = '○ Offline Mode';
+                status.style.background = '#888';
+            }
+        }
+
+        function renderLibrary(data) {
+            // 책장 비우기
+            for (let i = 1; i <= 9; i++) {
+                document.getElementById(`shelf-${i}`).innerHTML = '';
+            }
+
+            // 책 배치하기
+            data.forEach(book => {
+                const container = document.getElementById(`shelf-${book.shelfId}`);
+                if (container) {
+                    const bookEl = document.createElement('div');
+                    bookEl.className = 'book-object';
+                    bookEl.innerHTML = `
+                    <span class="tag">${book.category}</span>
+                    <span class="title">${book.title}</span>
+                    <span class="author">${book.author}</span>
+                    <div class="insight-preview">"${book.insight}"</div>
+                `;
+                    container.appendChild(bookEl);
+                }
+            });
+        }
+
+        // 초기 실행
+        window.onload = syncWithDatabase;
+    </script>
+
+</body>
+
+</html>
